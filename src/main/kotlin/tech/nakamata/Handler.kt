@@ -1,11 +1,11 @@
-package com.serverless
+package tech.nakamata
 
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.RequestHandler
 import org.apache.logging.log4j.LogManager
 
 class Handler:RequestHandler<Map<String, Any>, ApiGatewayResponse> {
-  override fun handleRequest(input:Map<String, Any>, context:Context):ApiGatewayResponse {
+  override fun handleRequest(input:Map<String, Any>, context:Context): ApiGatewayResponse {
     LOG.info("received: " + input.keys.toString())
 
     return ApiGatewayResponse.build {

@@ -1,3 +1,3 @@
-package com.serverless
+package tech.nakamata
 
 open class Response()
