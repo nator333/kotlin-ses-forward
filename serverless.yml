@@ -1,25 +1,27 @@
 # lambda function: kotlin-ses-forward
 # Receive S3 create event and get the mail object,
 #  then forward to another email address.
-
 service: kotlin-ses-forward
 
 custom:
-  region: us-west-2
-  deploymentBucket: nakamata.tech-lambda
-  eventBucket: nakamata.tech-ses
+  region: ${file(./src/main/resources/config.json):regionId}
+  deploymentBucket: ${file(./src/main/resources/config.json):deploymentBucket}
+  eventBucket: ${file(./src/main/resources/config.json):eventBucket}
+  jarName: kotlin-ses-forward
+  handlerPath: tech.nakamata.S3ReceiveMailEventHandler
 
 provider:
   name: aws
   runtime: java8
+  timeout: 30s
   deploymentBucket: ${self:custom.deploymentBucket}
-  stage: dev
   region: ${self:custom.region}
+  profile: lambdaUser
   iamRoleStatements:
     - Effect: "Allow"
       Action:
         - s3:GetObject
-      Resource: arn:aws:s3:::nakamata.tech-ses/*
+      Resource: arn:aws:s3:::${self:custom.eventBucket}/*
     - Effect: "Allow"
       Action:
         - ses:SendEmail
@@ -27,12 +29,31 @@ provider:
       Resource: "*"
 
 package:
-  artifact: build/libs/kotlin-ses-forward-dev-all.jar
+  artifact: build/libs/${self:custom.jarName}-dev-all.jar
 
 functions:
   kotlin-ses-forward:
-    handler: tech.nakamata.Handler
+    handler: ${self:custom.handlerPath}
     events:
       - s3:
           bucket: ${self:custom.eventBucket}
           event: s3:ObjectCreated:Put
+
+resources:
+  Resources:
+    BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: ${self:custom.eventBucket}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            Effect: Allow
+            Principal:
+              Service: ses.amazonaws.com
+            Action:
+              - s3:PutObject
+            Resource: arn:aws:s3:::${self:custom.eventBucket}/*
+            Condition:
+              StringEquals:
+                "aws:Referer": { Ref: AWS::AccountId }
