@@ -4,10 +4,10 @@
 service: kotlin-ses-forward
 
 custom:
+  serviceName: kotlin-ses-forward
   region: ${file(./src/main/resources/config.json):regionId}
   deploymentBucket: ${file(./src/main/resources/config.json):deploymentBucket}
   eventBucket: ${file(./src/main/resources/config.json):eventBucket}
-  jarName: kotlin-ses-forward
   handlerPath: tech.nakamata.S3ReceiveMailEventHandler
 
 provider:
@@ -17,6 +17,7 @@ provider:
   deploymentBucket: ${self:custom.deploymentBucket}
   region: ${self:custom.region}
   profile: lambdaUser
+  logRetentionInDays: 30
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -29,7 +30,7 @@ provider:
       Resource: "*"
 
 package:
-  artifact: build/libs/${self:custom.jarName}-dev-all.jar
+  artifact: build/libs/${self:custom.serviceName}-dev-all.jar
 
 functions:
   kotlin-ses-forward:
@@ -57,3 +58,24 @@ resources:
             Condition:
               StringEquals:
                 "aws:Referer": { Ref: AWS::AccountId }
+
+    ReceiptRuleSet:
+      Type: AWS::SES::ReceiptRuleSet
+      Properties:
+        RuleSetName: ${self:custom.serviceName}-rule-set
+
+    ReceiptRule:
+      Type: AWS::SES::ReceiptRule
+      DependsOn: BucketPolicy
+      Properties:
+        Rule:
+          Actions:
+            - S3Action:
+                BucketName: ${file(./src/main/resources/config.json):eventBucket}
+          Enabled: true
+          Name: ${self:custom.serviceName}-rule
+          Recipients:
+            - ${file(./src/main/resources/config.json):mailFrom}
+          ScanEnabled: true
+          TlsPolicy: Optional
+        RuleSetName: !Ref ReceiptRuleSet
