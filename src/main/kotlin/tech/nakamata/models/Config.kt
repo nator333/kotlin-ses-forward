@@ -1,8 +1,9 @@
 package tech.nakamata.models
 
 import com.amazonaws.regions.Regions
-import com.amazonaws.services.s3.model.Region
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
+@JsonIgnoreProperties(ignoreUnknown=true)
 data class Config(
     val mailFrom: String,
     val mailTo: List<String>,
