@@ -28,7 +28,6 @@ import javax.mail.internet.MimeMultipart
 
 
 class S3ReceiveMailEventHandler : RequestHandler<S3Event, String> {
-  private val config = this.retrieveConfig()
   
   companion object {
     private val LOG = LogManager.getLogger(S3ReceiveMailEventHandler::class.java)
@@ -40,75 +39,82 @@ class S3ReceiveMailEventHandler : RequestHandler<S3Event, String> {
       LOG.info("Event records empty")
       return "ok"
     }
-    
-    val s3Service = S3Service(this.config.region())
-    val sesService = SesService(this.config.region())
-    
-    val s3objects = s3Service.getS3Objects(s3event)
-    s3objects.forEach { s3object ->
-      try {
-        //Parse raw email and get the subject, body and attachments.
-        val emailMessage = MimeMessage(null, s3object.objectContent)
-        val parser = MimeMessageParser(emailMessage)
-        parser.parse()
-        
-        
-        val content = when {
-          parser.hasHtmlContent() -> Jsoup.parse(parser.htmlContent).outerHtml()
-          parser.hasPlainContent() -> parser.plainContent
-          else -> null
-        }
-        
-        val subject = parser.subject
-        val attachments: List<DataSource>? = parser.attachmentList
-        
-        //Prepare to send email
-        val mailSession = Session.getDefaultInstance(Properties())
-        val toAddresses = this.config.mailTo.map { InternetAddress(it) }.toTypedArray()
-        
-        // Create an email message and set To, From, Subject, Body & Attachment to it.
-        val msg = MimeMessage(mailSession).apply {
-          setFrom(InternetAddress(config.mailFrom))
-          setRecipients(javax.mail.Message.RecipientType.TO, toAddresses)
-          this.subject = SUBJECT_PREFIX + subject!!
-        }
-        
-        //Create message part
-        val part = MimeBodyPart()
-        part.setContent(content!!.toString(), "text/html")
-        
-        //Add a MIME part to the message
-        val mp = MimeMultipart()
-        mp.addBodyPart(part)
-        
-        //Add attachments
-        attachments!!.forEach { source ->
-          MimeBodyPart().apply {
-            this.dataHandler = DataHandler(source)
-            this.fileName = source.name
-            mp.addBodyPart(this)
+  
+    try {
+      val config = this.retrieveConfig()
+      val s3Service = S3Service(config.region())
+      val sesService = SesService(config.region())
+      val s3objects = s3Service.getS3Objects(s3event)
+      s3objects.forEach { s3object ->
+        try {
+          //Parse raw email and get the subject, body and attachments.
+          val emailMessage = MimeMessage(null, s3object.objectContent)
+          val parser = MimeMessageParser(emailMessage)
+          parser.parse()
+      
+      
+          val content = when {
+            parser.hasHtmlContent() -> Jsoup.parse(parser.htmlContent).outerHtml()
+            parser.hasPlainContent() -> parser.plainContent
+            else -> null
           }
+      
+          val subject = parser.subject
+          val attachments: List<DataSource>? = parser.attachmentList
+      
+          //Prepare to send email
+          val mailSession = Session.getDefaultInstance(Properties())
+          val toAddresses = config.mailTo.map { InternetAddress(it) }.toTypedArray()
+      
+          // Create an email message and set To, From, Subject, Body & Attachment to it.
+          val msg = MimeMessage(mailSession).apply {
+            setFrom(InternetAddress(config.mailFrom))
+            setRecipients(javax.mail.Message.RecipientType.TO, toAddresses)
+            this.subject = SUBJECT_PREFIX + subject!!
+          }
+      
+          //Create message part
+          val part = MimeBodyPart()
+          part.setContent(content!!.toString(), "text/html")
+      
+          //Add a MIME part to the message
+          val mp = MimeMultipart()
+          mp.addBodyPart(part)
+      
+          //Add attachments
+          attachments!!.forEach { source ->
+            MimeBodyPart().apply {
+              this.dataHandler = DataHandler(source)
+              this.fileName = source.name
+              mp.addBodyPart(this)
+            }
+          }
+      
+          msg.setContent(mp)
+      
+          // Write the raw email content to stream
+          val out = ByteArrayOutputStream()
+          msg.writeTo(out)
+      
+          RawMessage().apply {
+            data = ByteBuffer.wrap(out.toString().toByteArray())
+            //Send email with Amazon SES client
+            sesService.sendEmail(this)
+          }
+      
+          LOG.info("Email forwarded successfully.")
+        } catch (e: Exception) {
+          LOG.error("Exception : " + e.message)
+          return "ERROR"
         }
-        
-        msg.setContent(mp)
-        
-        // Write the raw email content to stream
-        val out = ByteArrayOutputStream()
-        msg.writeTo(out)
-        
-        RawMessage().apply {
-          data = ByteBuffer.wrap(out.toString().toByteArray())
-          //Send email with Amazon SES client
-          sesService.sendEmail(this)
-        }
-        
-        LOG.info("Email forwarded successfully.")
-      } catch (e: Exception) {
-        LOG.error("Exception : " + e.message)
       }
+    } catch(e: Exception) {
+      LOG.error("Exception : " + e.message)
+      return "ERROR"
     }
     
-    return "ok"
+    
+    return "OK"
   }
   
   private fun retrieveConfig(): Config {
