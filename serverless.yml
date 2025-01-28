@@ -1,3 +1,5 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: nator333
 # lambda function: kotlin-ses-forward
 # Receive S3 create event and get the mail object,
 #  then forward to another email address.
@@ -5,18 +7,18 @@ service: kotlin-ses-forward
 
 custom:
   serviceName: kotlin-ses-forward
-  region: ${file(./src/main/resources/config.json):regionId}
-  deploymentBucket: ${file(./src/main/resources/config.json):deploymentBucket}
-  eventBucket: ${file(./src/main/resources/config.json):eventBucket}
-  handlerPath: tech.nakamata.S3ReceiveMailEventHandler
+  region: ${file(./app/src/main/resources/config.json):regionId}
+  deploymentBucket: ${file(./app/src/main/resources/config.json):deploymentBucket}
+  eventBucket: ${file(./app/src/main/resources/config.json):eventBucket}
+  handlerPath: tech.nakamata.Main
+  version: 2.0.0
 
 provider:
   name: aws
-  runtime: java8
-  timeout: 30s
+  runtime: java17
+  timeout: 30
   deploymentBucket: ${self:custom.deploymentBucket}
   region: ${self:custom.region}
-  profile: lambdaUser
   logRetentionInDays: 30
   iamRoleStatements:
     - Effect: "Allow"
@@ -30,10 +32,11 @@ provider:
       Resource: "*"
 
 package:
-  artifact: build/libs/${self:custom.serviceName}-dev-all.jar
+  artifact: app/build/distributions/app-${self:custom.version}.zip
 
 functions:
-  kotlin-ses-forward:
+  Handler:
+    name: ${self:custom.serviceName}-handler-${sls:stage}
     handler: ${self:custom.handlerPath}
     events:
       - s3:
@@ -42,7 +45,7 @@ functions:
 
 resources:
   Resources:
-    BucketPolicy:
+    EventBucketPolicy:
       Type: AWS::S3::BucketPolicy
       Properties:
         Bucket: ${self:custom.eventBucket}
@@ -59,23 +62,24 @@ resources:
               StringEquals:
                 "aws:Referer": { Ref: AWS::AccountId }
 
+    # This resource requires manual activation
     ReceiptRuleSet:
       Type: AWS::SES::ReceiptRuleSet
       Properties:
-        RuleSetName: ${self:custom.serviceName}-rule-set
+        RuleSetName: ${self:custom.serviceName}-rule-set-${sls:stage}
 
     ReceiptRule:
       Type: AWS::SES::ReceiptRule
-      DependsOn: BucketPolicy
+      DependsOn: EventBucketPolicy
       Properties:
         Rule:
           Actions:
             - S3Action:
-                BucketName: ${file(./src/main/resources/config.json):eventBucket}
+                BucketName: ${file(./app/src/main/resources/config.json):eventBucket}
           Enabled: true
-          Name: ${self:custom.serviceName}-rule
+          Name: ${self:custom.serviceName}-rule-${sls:stage}
           Recipients:
-            - ${file(./src/main/resources/config.json):mailFrom}
+            - ${file(./app/src/main/resources/config.json):mailFrom}
           ScanEnabled: true
           TlsPolicy: Optional
         RuleSetName: !Ref ReceiptRuleSet
