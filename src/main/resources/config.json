@@ -1,9 +1,0 @@
-{
-  "mailFrom": "******",
-  "mailTo": [
-    "******"
-  ],
-  "regionId": "******",
-  "deploymentBucket": "******",
-  "eventBucket": "******"
-}

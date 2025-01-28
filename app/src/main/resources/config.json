@@ -1,0 +1,10 @@
+{
+  "mailFrom": "masahiro@nakamata.tech",
+  "mailTo": [
+    "m.nakamata35@gmail.com"
+  ],
+  "regionId": "us-west-2",
+  "deploymentBucket": "nakamata.tech-lambda",
+  "eventBucket": "nakamata.tech-event",
+  "subjectPrefix": "SES FW: "
+}
