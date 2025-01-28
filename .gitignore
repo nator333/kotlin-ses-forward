@@ -1,5 +1,6 @@
 *.class
 .gradle
+app/build/
 /build/
 /bin/
 /.settings/
@@ -18,3 +19,5 @@
 \.idea/
 
 \.DS_Store
+
+.env
