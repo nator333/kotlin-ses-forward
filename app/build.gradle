@@ -74,7 +74,7 @@ testing {
 		// Configure the built-in test suite
 		test {
 			// Use Kotlin Test test framework
-			useKotlinTest('1.9.10')
+			useKotlinTest('2.4.10')
 		}
 	}
 }
