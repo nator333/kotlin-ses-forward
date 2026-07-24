@@ -12,6 +12,10 @@ app/build/
 *.war
 *.ear
 
+# The Gradle wrapper jar must be tracked, otherwise ./gradlew cannot run
+# from a fresh checkout (CI included).
+!gradle/wrapper/gradle-wrapper.jar
+
 # Serverless directories
 .serverless
 
