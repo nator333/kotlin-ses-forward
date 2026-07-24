@@ -2,10 +2,10 @@ version: 2
 
 updates:
   - package-ecosystem: "gradle"
-    # Root holds settings.gradle plugins; app/ holds the application dependencies.
-    directories:
-      - "/"
-      - "/app"
+    # A single "/" covers the whole build: the Gradle scan picks up
+    # settings.gradle here plus the subproject build files (app/build.gradle).
+    # Listing "/app" as well made every ungrouped bump open twice.
+    directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
