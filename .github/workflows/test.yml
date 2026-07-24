@@ -1,10 +1,15 @@
 name: Test
 
+# Branch work is covered by the pull_request trigger, which builds the merge
+# result rather than the branch tip in isolation. push is limited to master so
+# it only covers what has already landed. Matching "**" here instead would fire
+# a second, identical run for every commit on a branch that has a PR open -
+# concurrency does not collapse those, because the two events carry different
+# github.ref values (refs/heads/... vs refs/pull/N/merge).
 on:
   push:
-    branches: ["**"]
-  pull_request:
     branches: [master]
+  pull_request:
 
 # Cancel superseded runs on the same ref, so a rapid series of pushes
 # only pays for the newest one.
