@@ -40,6 +40,24 @@ jobs:
       - name: Run unit tests
         run: ./gradlew test --stacktrace
 
+      # `build` used to depend on both clean and buildZip with no ordering
+      # between them, so clean deleted the artifact buildZip had produced.
+      # Assert against the exact path serverless.yml declares, so a version
+      # drift between build.gradle and serverless.yml also fails here.
+      # spotlessCheck is excluded: its ratchetFrom needs full git history,
+      # and formatting drift should not fail a dependency bump.
+      - name: Verify build produces the deploy artifact
+        run: |
+          ./gradlew build -x spotlessCheck --stacktrace
+          version=$(grep -E '^[[:space:]]+version:' serverless.yml | head -1 | awk '{print $2}')
+          artifact="app/build/distributions/app-${version}.zip"
+          if [ ! -f "$artifact" ]; then
+            echo "::error::serverless.yml declares $artifact but the build did not produce it"
+            ls -R app/build/distributions 2>/dev/null || echo "(no distributions directory)"
+            exit 1
+          fi
+          echo "OK: $artifact ($(du -h "$artifact" | cut -f1))"
+
       - name: Upload test report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
