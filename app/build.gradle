@@ -49,23 +49,23 @@ dependencies {
 	// This dependency is used by the application.
 	implementation 'com.google.guava:guava:32.1.1-jre'
 	// AWS V2
-	implementation(platform("software.amazon.awssdk:bom:2.27.21"))
+	implementation(platform("software.amazon.awssdk:bom:2.49.2"))
 	implementation("software.amazon.awssdk:s3")
 	implementation("software.amazon.awssdk:s3-transfer-manager")
 	implementation("software.amazon.awssdk:sesv2")
 	// AWS V1
-	implementation('com.amazonaws:aws-lambda-java-core:1.2.3')
-	implementation('com.amazonaws:aws-lambda-java-events:3.14.0')
+	implementation('com.amazonaws:aws-lambda-java-core:1.4.0')
+	implementation('com.amazonaws:aws-lambda-java-events:3.16.1')
 
 	// Jackson
-	implementation(platform("com.fasterxml.jackson:jackson-bom:2.18.2"))
+	implementation(platform("com.fasterxml.jackson:jackson-bom:2.22.1"))
 	implementation('com.fasterxml.jackson.core:jackson-core')
 	implementation('com.fasterxml.jackson.core:jackson-databind')
 	implementation('com.fasterxml.jackson.core:jackson-annotations')
 	implementation('com.fasterxml.jackson.module:jackson-module-kotlin')
 
-	implementation("org.apache.logging.log4j:log4j-slf4j2-impl:2.24.3")
-	implementation('org.jsoup:jsoup:1.18.3')
+	implementation("org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1")
+	implementation('org.jsoup:jsoup:1.22.2')
 	implementation('org.apache.commons:commons-email2-javax:2.0.0-M1')
 }
 
