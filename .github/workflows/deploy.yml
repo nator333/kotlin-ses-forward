@@ -1,0 +1,103 @@
+name: Deploy
+
+# Deploys the Lambda to AWS with the Serverless Framework.
+#
+# Deliberately manual. This repo is public, and this role is the only credential
+# in the account that can touch the SES receipt pipeline, so a merged bad commit
+# does nothing until a human clicks "Run workflow".
+#
+# There is no AWS key stored in this repo: credentials are short-lived and issued
+# over OIDC. The role's trust policy lives in nator333/portfolio-api
+# (lib/github-oidc-stack.ts) and requires *both* that the job run in the
+# "production" environment and that the token's job_workflow_ref name this file
+# on master. Dispatching a modified copy of this workflow from another branch is
+# therefore rejected by STS, not merely by GitHub.
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: >-
+          Serverless stage. Leave as "dev" unless you mean it: the live stack is
+          kotlin-ses-forward-dev, and any other value builds a second, parallel
+          stack rather than updating that one.
+        type: string
+        default: dev
+
+permissions:
+  contents: read
+  id-token: write # required to request the OIDC token
+
+concurrency:
+  group: deploy-kotlin-ses-forward
+  # Never interrupt an in-flight CloudFormation update; a cancelled deploy can
+  # leave the stack in UPDATE_ROLLBACK_FAILED, which needs manual recovery.
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    # Two jobs at once: it gates on the environment's protection rules, and it
+    # makes the OIDC sub claim `repo:...:environment:production`. Note the sub
+    # claim carries no branch, so the "master only" rule is enforced by this
+    # environment's deployment-branch setting plus the job_workflow_ref pin.
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # The wrapper jar is a binary in the repo; verify it matches an official
+      # Gradle release before executing it.
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      # serverless.yml consumes app/build/distributions/app-<version>.zip as a
+      # prebuilt artifact, so this must run before `serverless deploy`.
+      - name: Build the deploy artifact
+        run: ./gradlew :app:buildZip --stacktrace
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install Serverless Framework
+        # Pinned to a major: an unpinned install would silently pick up a new
+        # major between deploys.
+        run: npm install -g serverless@4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.REGION_ID }}
+          role-session-name: gha-kotlin-ses-forward-${{ github.run_id }}
+
+      - name: Deploy
+        run: serverless deploy --stage "$STAGE" --verbose
+        env:
+          STAGE: ${{ inputs.stage }}
+          # serverless.yml declares `org: nator333`, so the CLI authenticates
+          # against the Serverless dashboard. Remove that line from serverless.yml
+          # if you would rather not depend on it, and this secret with it.
+          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+          # Bucket names are secrets rather than vars to match how the README
+          # masks them; the deploy role is scoped to exactly these two buckets.
+          DEPLOYMENT_BUCKET: ${{ secrets.DEPLOYMENT_BUCKET }}
+          EVENT_BUCKET: ${{ secrets.EVENT_BUCKET }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          REGION_ID: ${{ vars.REGION_ID }}
+          # The deploy role may only create the execution role if it carries
+          # this boundary; see the `iam.role` block in serverless.yml.
+          LAMBDA_PERMISSIONS_BOUNDARY_ARN: ${{ vars.LAMBDA_PERMISSIONS_BOUNDARY_ARN }}
