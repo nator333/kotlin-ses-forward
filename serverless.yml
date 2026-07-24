@@ -24,16 +24,26 @@ provider:
     name: ${env:DEPLOYMENT_BUCKET}
   region: ${env:REGION_ID}
   logRetentionInDays: 30
-  iamRoleStatements:
-    - Effect: "Allow"
-      Action:
-        - s3:GetObject
-      Resource: arn:aws:s3:::${self:custom.eventBucket}/*
-    - Effect: "Allow"
-      Action:
-        - ses:SendEmail
-        - ses:SendRawEmail
-      Resource: "*"
+  # Migrated from the deprecated top-level `iamRoleStatements`, which cannot
+  # coexist with the `iam.role` block the permissions boundary needs.
+  iam:
+    role:
+      # Ceiling on what this function's execution role can ever be granted. The
+      # CI deploy role is only allowed to create roles carrying this boundary,
+      # so removing this line makes the deploy fail closed with AccessDenied on
+      # iam:CreateRole rather than silently widening what CI can create.
+      # Defined in nator333/portfolio-api, lib/github-oidc-stack.ts.
+      permissionsBoundary: ${env:LAMBDA_PERMISSIONS_BOUNDARY_ARN}
+      statements:
+        - Effect: "Allow"
+          Action:
+            - s3:GetObject
+          Resource: arn:aws:s3:::${self:custom.eventBucket}/*
+        - Effect: "Allow"
+          Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+          Resource: "*"
 
 package:
   artifact: app/build/distributions/app-${self:custom.version}.zip

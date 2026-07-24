@@ -10,7 +10,7 @@ if [ -f .env ]; then
 fi
 
 # Required environment variables
-required_vars=("MAIL_TO" "MAIL_FROM" "REGION_ID" "EVENT_BUCKET" "DEPLOYMENT_BUCKET")
+required_vars=("MAIL_TO" "MAIL_FROM" "REGION_ID" "EVENT_BUCKET" "DEPLOYMENT_BUCKET" "LAMBDA_PERMISSIONS_BOUNDARY_ARN")
 
 # Check if all required environment variables are set
 for var in "${required_vars[@]}"; do
