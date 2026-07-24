@@ -82,7 +82,9 @@ testing {
 // Apply a specific Java toolchain to ease working on different environments.
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
+		// Matches the java21 Lambda runtime in serverless.yml, so the bytecode
+		// we ship is the same major version we run on.
+		languageVersion = JavaLanguageVersion.of(21)
 	}
 }
 
@@ -95,8 +97,8 @@ task buildZip(type: Zip) {
 }
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_17
-	targetCompatibility = JavaVersion.VERSION_17
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
 }
 
 // Deliberately no `build.dependsOn clean`: Gradle imposes no ordering between
