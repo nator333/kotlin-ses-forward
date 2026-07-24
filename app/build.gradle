@@ -99,5 +99,7 @@ java {
 	targetCompatibility = JavaVersion.VERSION_17
 }
 
-build.dependsOn clean
+// Deliberately no `build.dependsOn clean`: Gradle imposes no ordering between
+// a task's dependencies, so clean ran after buildZip and deleted the artifact
+// it had just produced. Run `./gradlew clean build` for a from-scratch build.
 build.dependsOn buildZip
