@@ -1,0 +1,42 @@
+name: Dependabot auto-merge
+
+# pull_request_target is required: Dependabot PRs receive a read-only
+# GITHUB_TOKEN on the plain pull_request event, which cannot enable auto-merge.
+#
+# SECURITY: pull_request_target runs with a write-capable token in the context
+# of the base repository. This job therefore never checks out or executes the
+# PR's code - it only reads metadata and calls the GitHub API. Do not add a
+# checkout step here.
+on: pull_request_target
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Enable auto-merge
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Major bumps are left for a human. Both majors seen so far needed one:
+      # the Jackson BOM broke compilation until Kotlin was upgraded first, and
+      # the Gradle wrapper bump silently rewrote gradlew.bat line endings.
+      - name: Enable auto-merge for non-major updates
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Note major update left for review
+        if: steps.metadata.outputs.update-type == 'version-update:semver-major'
+        run: |
+          echo "::notice::Major update (${{ steps.metadata.outputs.dependency-names }}) - not auto-merging, review manually."
