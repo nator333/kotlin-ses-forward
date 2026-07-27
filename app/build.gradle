@@ -49,7 +49,7 @@ dependencies {
 	// This dependency is used by the application.
 	implementation 'com.google.guava:guava:33.6.0-jre'
 	// AWS V2
-	implementation(platform("software.amazon.awssdk:bom:2.49.2"))
+	implementation(platform("software.amazon.awssdk:bom:2.49.3"))
 	implementation("software.amazon.awssdk:s3")
 	implementation("software.amazon.awssdk:s3-transfer-manager")
 	implementation("software.amazon.awssdk:sesv2")
