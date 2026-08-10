@@ -50,7 +50,7 @@ jobs:
       # The wrapper jar is a binary in the repo; verify it matches an official
       # Gradle release before executing it.
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v6.2.0
+        uses: gradle/actions/wrapper-validation@v6.3.0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -59,7 +59,7 @@ jobs:
           java-version: "21"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6.2.0
+        uses: gradle/actions/setup-gradle@v6.3.0
 
       # serverless.yml consumes app/build/distributions/app-<version>.zip as a
       # prebuilt artifact, so this must run before `serverless deploy`.
