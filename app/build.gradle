@@ -8,7 +8,7 @@
 plugins {
 	// Apply the org.jetbrains.kotlin.jvm Plugin to add support for Kotlin.
 	id 'org.jetbrains.kotlin.jvm' version '2.4.20'
-	id "com.diffplug.spotless" version "8.10.2"
+	id "com.diffplug.spotless" version "8.10.3"
 }
 
 version = "2.0.0"
@@ -47,9 +47,9 @@ repositories {
 
 dependencies {
 	// This dependency is used by the application.
-	implementation 'com.google.guava:guava:33.7.1-jre'
+	implementation 'com.google.guava:guava:33.7.2-jre'
 	// AWS V2
-	implementation(platform("software.amazon.awssdk:bom:2.55.5"))
+	implementation(platform("software.amazon.awssdk:bom:2.55.10"))
 	implementation("software.amazon.awssdk:s3")
 	implementation("software.amazon.awssdk:s3-transfer-manager")
 	implementation("software.amazon.awssdk:sesv2")
