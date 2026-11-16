@@ -49,7 +49,7 @@ dependencies {
 	// This dependency is used by the application.
 	implementation 'com.google.guava:guava:33.8.0-jre'
 	// AWS V2
-	implementation(platform("software.amazon.awssdk:bom:2.57.10"))
+	implementation(platform("software.amazon.awssdk:bom:2.59.0"))
 	implementation("software.amazon.awssdk:s3")
 	implementation("software.amazon.awssdk:s3-transfer-manager")
 	implementation("software.amazon.awssdk:sesv2")
@@ -58,7 +58,7 @@ dependencies {
 	implementation('com.amazonaws:aws-lambda-java-events:3.16.1')
 
 	// Jackson
-	implementation(platform("com.fasterxml.jackson:jackson-bom:2.22.4"))
+	implementation(platform("com.fasterxml.jackson:jackson-bom:2.23.0"))
 	implementation('com.fasterxml.jackson.core:jackson-core')
 	implementation('com.fasterxml.jackson.core:jackson-databind')
 	implementation('com.fasterxml.jackson.core:jackson-annotations')
